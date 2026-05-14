@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Envoyer des Robux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --surface:#0f0f1a;--panel:#1e1e30;--panel2:#252538;
+      --blue:#0066ff;--blue2:#1a7aff;--border:#2e2e4a;
+      --text:#fff;--muted:#8888aa;--green:#00b06a;--red:#e5242e;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--surface);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh}
+
+    /* TOPBAR */
+    .topbar{background:#111122;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1rem;height:52px;position:sticky;top:0;z-index:100}
+    .roblox-logo{font-weight:900;font-size:1.25rem;letter-spacing:-1px}
+    .topbar-bal{display:flex;align-items:center;gap:.4rem;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:.3rem .7rem;font-size:.85rem;font-weight:700}
+
+    /* MODAL */
+    .modal-wrap{max-width:420px;margin:0 auto;min-height:calc(100vh - 52px);display:flex;flex-direction:column}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.2rem .8rem;border-bottom:1px solid var(--border);background:#111122}
+    .modal-title{display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:800}
+    .header-bal{display:flex;align-items:center;gap:.4rem;font-size:.9rem;font-weight:800}
+
+    /* STEP 1 */
+    #step-search{padding:1rem 1.2rem;flex:1}
+    .search-box{display:flex;align-items:center;gap:.5rem;background:var(--panel2);border:2px solid var(--blue);border-radius:10px;padding:.6rem .9rem;margin-bottom:1rem}
+    .search-box input{background:none;border:none;outline:none;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;width:100%}
+    .search-box input::placeholder{color:var(--muted)}
+    .verify-row{display:flex;align-items:center;gap:.75rem;padding:.7rem .9rem;border-radius:10px;margin-bottom:.8rem}
+    .verify-row.loading{background:var(--panel2)}
+    .verify-row.success{background:rgba(0,176,106,.1);border:1px solid rgba(0,176,106,.3);cursor:pointer}
+    .verify-row.success:hover{background:rgba(0,176,106,.18)}
+    .verify-row.error{background:rgba(229,36,46,.08);border:1px solid rgba(229,36,46,.25)}
+    .v-avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;background:var(--panel);flex-shrink:0;border:2px solid rgba(0,176,106,.5)}
+    .v-avatar img{width:100%;height:100%;object-fit:cover}
+    .v-avatar-ph{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:#2a2a45;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .v-info{flex:1}.v-name{font-weight:800;font-size:.95rem}.v-sub{font-size:.75rem;color:var(--muted);margin-top:2px}
+    .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .section-title{font-size:.82rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem}
+    .friends-list{display:flex;flex-direction:column;gap:2px}
+    .friend-row{display:flex;align-items:center;gap:.75rem;padding:.65rem .7rem;border-radius:10px;cursor:pointer;transition:background .15s}
+    .friend-row:hover{background:var(--panel2)}
+    .friend-av{width:40px;height:40px;border-radius:50%;background:#2a2a45;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;overflow:hidden}
+    .friend-av img{width:100%;height:100%;object-fit:cover}
+    .friend-name{font-weight:700;font-size:.95rem}
+
+    /* STEP 2 */
+    #step-amount{display:none;flex:1;flex-direction:column}
+    .recipient-hero{display:flex;flex-direction:column;align-items:center;padding:1.8rem 1.2rem 1.2rem;border-bottom:1px solid var(--border)}
+    .recipient-avatar{width:72px;height:72px;border-radius:50%;overflow:hidden;background:#2a2a45;margin-bottom:.6rem;border:2px solid var(--border)}
+    .recipient-avatar img{width:100%;height:100%;object-fit:cover}
+    .recipient-avatar-ph{width:72px;height:72px;border-radius:50%;background:#2a2a45;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:.6rem}
+    .recipient-name{font-size:1rem;font-weight:800}
+    .amount-display{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:1.2rem;font-size:2.4rem;font-weight:900}
+    .quick-amounts{display:flex;gap:.6rem;justify-content:center;padding:0 1.2rem 1rem;flex-wrap:wrap}
+    .qa-btn{display:flex;align-items:center;gap:.35rem;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:.4rem .75rem;color:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}
+    .qa-btn:hover,.qa-btn.active{background:var(--blue);border-color:var(--blue)}
+    .numpad{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:.5rem 1.2rem;background:#0d0d1a}
+    .np-key{background:#1c1c2e;border:none;border-radius:6px;color:#fff;font-family:'Nunito',sans-serif;font-size:1.25rem;font-weight:700;padding:.9rem;cursor:pointer;transition:background .1s;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .np-key:active{background:#2a2a40}
+    .np-sub{font-size:.55rem;color:var(--muted);margin-top:2px;letter-spacing:.5px}
+    .bottom-panel{background:#111122;border-top:1px solid var(--border);padding:.9rem 1.2rem}
+    .btn-suivant{width:100%;background:var(--blue);border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;padding:.85rem;cursor:pointer;transition:background .2s}
+    .btn-suivant:hover:not(:disabled){background:var(--blue2)}
+    .btn-suivant:disabled{opacity:.45;cursor:not-allowed}
+    .delivery-note{text-align:center;font-size:.75rem;color:var(--muted);margin-top:.5rem}
+
+    /* STEP 3 */
+    #step-confirm{display:none;flex-direction:column;flex:1}
+    .confirm-body{flex:1;padding:1.5rem 1.2rem}
+    .confirm-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.2rem}
+    .confirm-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem}
+    .confirm-row:last-child{margin-bottom:0}
+    .confirm-label{font-size:.82rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .confirm-val{font-size:.95rem;font-weight:800}
+    .confirm-amount{display:flex;align-items:center;gap:.35rem}
+    .confirm-recipient{display:flex;align-items:center;gap:.5rem}
+    .conf-avatar{width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2a2a45;display:flex;align-items:center;justify-content:center;font-size:.8rem}
+    .conf-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .delivery-banner{background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:12px;padding:.9rem 1rem;display:flex;align-items:flex-start;gap:.6rem;font-size:.82rem;color:#ddd;line-height:1.5}
+    .btn-confirm{width:100%;background:var(--blue);border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;padding:.85rem;cursor:pointer;transition:background .2s;margin-bottom:.5rem}
+    .btn-confirm:hover{background:var(--blue2)}
+    .btn-cancel{width:100%;background:none;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;padding:.75rem;cursor:pointer}
+    .btn-cancel:hover{border-color:var(--red);color:var(--red)}
+
+    /* STEP 4 */
+    #step-success{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem 1.5rem;text-align:center}
+    .success-icon{font-size:4rem;margin-bottom:1rem;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+    .success-title{font-size:1.3rem;font-weight:900;margin-bottom:.5rem}
+    .success-amount{font-size:2rem;font-weight:900;display:flex;align-items:center;gap:.5rem;justify-content:center;margin-bottom:.3rem}
+    .success-to{font-size:.85rem;color:var(--muted);margin-bottom:2rem}
+    .success-sub{font-size:.9rem;color:var(--muted);line-height:1.6;margin-bottom:2rem;max-width:300px}
+    .btn-new{background:var(--blue);border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;padding:.85rem 2rem;cursor:pointer}
+
+    /* FEED */
+    .feed-section{padding:1rem 1.2rem 2rem}
+    .feed-title{font-size:.82rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem}
+    .feed-title::after{content:'';flex:1;height:1px;background:var(--border)}
+    .feed-list{display:flex;flex-direction:column;gap:.5rem}
+    .feed-item{display:flex;align-items:center;gap:.75rem;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;animation:slideIn .3s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .feed-av{width:34px;height:34px;border-radius:50%;overflow:hidden;background:#2a2a45;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+    .feed-av img{width:100%;height:100%;object-fit:cover}
+    .feed-info{flex:1;min-width:0}
+    .feed-user{font-weight:800;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .feed-msg{font-size:.75rem;color:var(--muted);margin-top:1px}
+    .feed-right{text-align:right;flex-shrink:0}
+    .feed-amt{display:flex;align-items:center;gap:.25rem;font-weight:900;font-size:.88rem;justify-content:flex-end}
+    .feed-time{font-size:.7rem;color:var(--muted);margin-top:1px}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     VRAI LOGO ROBUX SVG (hexagone officiel)
+     Reproduit fidèlement depuis l'app Roblox
+     ══════════════════════════════════════ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="robux-logo" viewBox="0 0 40 40">
+    <!-- Hexagone arrondi (contour) -->
+    <path d="
+      M20 2
+      L34 9.5
+      L34 30.5
+      L20 38
+      L6 30.5
+      L6 9.5
+      Z
+    " fill="none" stroke="white" stroke-width="2.8" stroke-linejoin="round"/>
+    <!-- Lettre R stylisée Roblox à l'intérieur -->
+    <text
+      x="12" y="28"
+      font-family="Arial Black, Arial, sans-serif"
+      font-weight="900"
+      font-size="19"
+      fill="white"
+      letter-spacing="-1"
+    >R</text>
+  </symbol>
+</svg>
+
+<!-- Helper JS pour insérer le logo facilement -->
+<script>
+function rbxIcon(size){
+  size = size||20;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 2 L34 9.5 L34 30.5 L20 38 L6 30.5 L6 9.5 Z"
+      fill="none" stroke="white" stroke-width="2.8" stroke-linejoin="round"/>
+    <text x="12" y="28" font-family="Arial Black,Arial,sans-serif"
+      font-weight="900" font-size="19" fill="white" letter-spacing="-1">R</text>
+  </svg>`;
+}
+</script>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="roblox-logo">Roblox</div>
+  <div class="topbar-bal" id="topbar-bal-el">
+    <!-- rempli par JS -->
+  </div>
+</div>
+
+<div class="modal-wrap">
+
+  <!-- HEADER -->
+  <div class="modal-header">
+    <div class="modal-title" id="modal-title-el">
+      <!-- rempli par JS -->
+    </div>
+    <div class="header-bal" id="header-bal-el">
+      <!-- rempli par JS -->
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 1 : RECHERCHE ══ -->
+  <div id="step-search">
+    <div class="search-box">
+      <span style="color:var(--muted);font-size:1rem">🔍</span>
+      <input type="text" id="search-input" placeholder="Rechercher par nom d'utilisateur" autocomplete="off" spellcheck="false" />
+    </div>
+    <div id="vbox-loading" style="display:none">
+      <div class="verify-row loading">
+        <div class="spinner"></div>
+        <div class="v-info"><div class="v-name" style="color:var(--muted)">Vérification du compte Roblox...</div></div>
+      </div>
+    </div>
+    <div id="vbox-result"></div>
+
+    <div class="section-title" style="margin-top:.5rem">Mes amis (91)</div>
+    <div class="friends-list" id="friends-list"></div>
+
+    <div class="feed-section">
+      <div class="feed-title">Dons récents</div>
+      <div class="feed-list" id="feed-list">
+        <div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Aucun don récent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 2 : MONTANT ══ -->
+  <div id="step-amount">
+    <div class="recipient-hero">
+      <div id="rec-avatar-wrap"></div>
+      <div class="recipient-name" id="rec-name">—</div>
+    </div>
+
+    <div class="amount-display" id="amount-display-row">
+      <!-- icône + chiffre remplis par JS -->
+    </div>
+
+    <div class="quick-amounts">
+      <button class="qa-btn" data-val="25"></button>
+      <button class="qa-btn" data-val="50"></button>
+      <button class="qa-btn" data-val="100"></button>
+      <button class="qa-btn" data-val="200"></button>
+    </div>
+
+    <div class="numpad">
+      <button class="np-key" data-n="1">1</button>
+      <button class="np-key" data-n="2">2<span class="np-sub">ABC</span></button>
+      <button class="np-key" data-n="3">3<span class="np-sub">DEF</span></button>
+      <button class="np-key" data-n="4">4<span class="np-sub">GHI</span></button>
+      <button class="np-key" data-n="5">5<span class="np-sub">JKL</span></button>
+      <button class="np-key" data-n="6">6<span class="np-sub">MNO</span></button>
+      <button class="np-key" data-n="7">7<span class="np-sub">PQRS</span></button>
+      <button class="np-key" data-n="8">8<span class="np-sub">TUV</span></button>
+      <button class="np-key" data-n="9">9<span class="np-sub">WXYZ</span></button>
+      <button class="np-key" data-n="back" style="font-size:.9rem;color:var(--muted)">⌫</button>
+      <button class="np-key" data-n="0">0</button>
+      <button class="np-key" data-n="clear" style="font-size:.75rem;color:var(--muted)">C</button>
+    </div>
+
+    <div class="bottom-panel">
+      <button class="btn-suivant" id="btn-suivant" disabled>Suivant</button>
+      <div class="delivery-note">⏱ Les Robux sont envoyés sous 48h</div>
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 3 : CONFIRMATION ══ -->
+  <div id="step-confirm">
+    <div class="confirm-body">
+      <div class="confirm-card">
+        <div class="confirm-row">
+          <div class="confirm-label">Destinataire</div>
+          <div class="confirm-val">
+            <div class="confirm-recipient">
+              <div class="conf-avatar" id="conf-av"></div>
+              <span id="conf-name">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="confirm-row">
+          <div class="confirm-label">Montant</div>
+          <div class="confirm-val">
+            <div class="confirm-amount" id="conf-amount-row"></div>
+          </div>
+        </div>
+        <div class="confirm-row">
+          <div class="confirm-label">Solde après</div>
+          <div class="confirm-val">
+            <div class="confirm-amount" id="conf-after-row"></div>
+          </div>
+        </div>
+        <div class="confirm-row" style="margin-bottom:0">
+          <div class="confirm-label">Frais</div>
+          <div class="confirm-val" style="color:var(--green)">Gratuit</div>
+        </div>
+      </div>
+      <div class="delivery-banner">
+        <span>⏱</span>
+        <span>Les Robux seront envoyés à <strong id="conf-name2">—</strong> dans un délai de <strong>48 heures</strong> après confirmation. Vérifie bien le pseudo avant d'envoyer.</span>
+      </div>
+    </div>
+    <div class="bottom-panel">
+      <button class="btn-confirm" id="btn-confirm">Envoyer</button>
+      <button class="btn-cancel" id="btn-cancel">Annuler</button>
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 4 : SUCCÈS ══ -->
+  <div id="step-success">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Don envoyé !</div>
+    <div class="success-amount" id="succ-amount-row"></div>
+    <div class="success-to">→ <span id="succ-name">—</span></div>
+    <div class="success-sub">Les Robux arriveront chez <strong id="succ-name2">—</strong> sous <strong>48 heures</strong>. Merci ! 🎮</div>
+    <button class="btn-new" id="btn-new">Faire un autre don</button>
+  </div>
+
+</div><!-- end modal-wrap -->
+
+<script>
+/* ══ STATE ══ */
+let balance = 30000;
+let currentAmount = 0;
+let currentUser = null;
+const donations = [];
+
+const FRIENDS = ['STAR_GAVINNE','pr1nce_RAYANE','241','TM_capiano','Bassir377','xXNightXx','CoolGamer99','ShadowZ'];
+const EMOJIS  = ['😎','🦊','🐉','⚡','🎯','🌟','👾','🔥'];
+function emojiFor(s){let n=0;for(let c of s)n+=c.charCodeAt(0);return EMOJIS[n%EMOJIS.length]}
+
+/* ══ INJECT LOGO ROBUX PARTOUT ══ */
+function injectLogos(){
+  // topbar balance
+  document.getElementById('topbar-bal-el').innerHTML =
+    rbxIcon(18) + `<span id="balance-top">${balance.toLocaleString('fr-FR')}</span>`;
+
+  // header
+  document.getElementById('modal-title-el').innerHTML =
+    rbxIcon(22) + ' Envoyer des Robux';
+  document.getElementById('header-bal-el').innerHTML =
+    rbxIcon(18) + `<span id="balance-header">${balance.toLocaleString('fr-FR')}</span>`;
+
+  // quick amount buttons
+  document.querySelectorAll('.qa-btn').forEach(btn=>{
+    const v = btn.dataset.val;
+    btn.innerHTML = rbxIcon(14) + v;
+  });
+
+  // amount display
+  document.getElementById('amount-display-row').innerHTML =
+    rbxIcon(36) + '<span id="amount-num">0</span>';
+}
+
+function updateBalance(){
+  const s = balance.toLocaleString('fr-FR');
+  const bt = document.getElementById('balance-top');
+  const bh = document.getElementById('balance-header');
+  if(bt) bt.textContent = s;
+  if(bh) bh.textContent = s;
+}
+
+/* ══ PROXIES CASCADE ══ */
+const PROXIES = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
+async function proxyFetch(targetUrl){
+  let lastErr;
+  for(const mk of PROXIES){
+    try{
+      const res = await fetch(mk(targetUrl),{signal:AbortSignal.timeout(6000)});
+      if(!res.ok) continue;
+      const txt = await res.text();
+      try{const w=JSON.parse(txt);return(w&&typeof w.contents==='string')?JSON.parse(w.contents):w}
+      catch{return JSON.parse(txt)}
+    }catch(e){lastErr=e}
+  }
+  throw lastErr||new Error('Tous les proxies ont échoué');
+}
+
+async function robloxSearch(username){
+  const data = await proxyFetch(
+    `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`
+  );
+  if(!data.data||!data.data.length) return null;
+  return data.data.find(u=>u.name.toLowerCase()===username.toLowerCase())||null;
+}
+
+async function robloxAvatar(id){
+  try{
+    const data = await proxyFetch(
+      `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${id}&size=150x150&format=Png&isCircular=false`
+    );
+    return data.data?.[0]?.imageUrl||null;
+  }catch{return null}
+}
+
+/* ══ FRIENDS LIST ══ */
+(function(){
+  const list = document.getElementById('friends-list');
+  FRIENDS.forEach(name=>{
+    const row = document.createElement('div');
+    row.className = 'friend-row';
+    row.innerHTML = `<div class="friend-av">${emojiFor(name)}</div><div class="friend-name">${h(name)}</div>`;
+    row.addEventListener('click',()=>{currentUser={name,avatarUrl:null};goToAmount()});
+    list.appendChild(row);
+  });
+})();
+
+/* ══ RECHERCHE / VÉRIFICATION ══ */
+let vTimer = null;
+const searchInput  = document.getElementById('search-input');
+const vboxLoading  = document.getElementById('vbox-loading');
+const vboxResult   = document.getElementById('vbox-result');
+
+searchInput.addEventListener('input',()=>{
+  clearTimeout(vTimer);
+  resetVerify();
+  const val = searchInput.value.trim();
+  if(val.length < 3) return;
+  vTimer = setTimeout(()=>doVerify(val), 700);
+});
+
+function resetVerify(){
+  vboxLoading.style.display = 'none';
+  vboxResult.innerHTML = '';
+}
+
+async function doVerify(username){
+  vboxLoading.style.display = 'block';
+  vboxResult.innerHTML = '';
+  try{
+    const user = await robloxSearch(username);
+    vboxLoading.style.display = 'none';
+    if(!user){ showVerifyError(`Aucun compte Roblox trouvé pour "${username}"`); return; }
+    const avatarUrl = await robloxAvatar(user.id).catch(()=>null);
+    showVerifyFound({name:user.name, avatarUrl});
+  }catch{
+    vboxLoading.style.display = 'none';
+    showVerifyError('Connexion impossible — vérifie ta connexion');
+  }
+}
+
+function showVerifyFound(user){
+  const div = document.createElement('div');
+  div.className = 'verify-row success';
+  div.innerHTML = `
+    <div class="v-avatar">${user.avatarUrl
+      ? `<img src="${h(user.avatarUrl)}" />`
+      : `<span style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2rem">${emojiFor(user.name)}</span>`
+    }</div>
+    <div class="v-info">
+      <div class="v-name">${h(user.name)}</div>
+      <div class="v-sub">Compte Roblox vérifié ✓</div>
+    </div>
+    <span style="color:var(--green);font-size:1.3rem;font-weight:900">›</span>`;
+  div.addEventListener('click',()=>{
+    currentUser = {name:user.name, avatarUrl:user.avatarUrl};
+    goToAmount();
+  });
+  vboxResult.appendChild(div);
+}
+
+function showVerifyError(msg){
+  vboxResult.innerHTML = `
+    <div class="verify-row error">
+      <div class="v-avatar-ph">❌</div>
+      <div class="v-info">
+        <div class="v-name" style="color:#ff6b6b">Introuvable</div>
+        <div class="v-sub">${h(msg)}</div>
+      </div>
+    </div>`;
+}
+
+/* ══ ÉTAPE 2 : MONTANT ══ */
+function goToAmount(){
+  currentAmount = 0;
+  document.getElementById('amount-num').textContent = '0';
+  document.querySelectorAll('.qa-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-suivant').disabled = true;
+
+  document.getElementById('rec-name').textContent = currentUser.name;
+  const wrap = document.getElementById('rec-avatar-wrap');
+  wrap.innerHTML = currentUser.avatarUrl
+    ? `<div class="recipient-avatar"><img src="${h(currentUser.avatarUrl)}" /></div>`
+    : `<div class="recipient-avatar-ph">${emojiFor(currentUser.name)}</div>`;
+
+  show('step-amount');
+}
+
+document.querySelectorAll('.qa-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.qa-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    setAmount(parseInt(btn.dataset.val));
+  });
+});
+
+document.querySelectorAll('.np-key').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.qa-btn').forEach(b=>b.classList.remove('active'));
+    const n = btn.dataset.n;
+    if(n==='back'){ setAmount(parseInt(String(currentAmount).slice(0,-1))||0) }
+    else if(n==='clear'){ setAmount(0) }
+    else{
+      const v = parseInt(String(currentAmount===0?'':currentAmount)+n)||0;
+      setAmount(Math.min(v, balance));
+    }
+  });
+});
+
+function setAmount(v){
+  currentAmount = v;
+  document.getElementById('amount-num').textContent = v.toLocaleString('fr-FR');
+  document.getElementById('btn-suivant').disabled = v < 1 || v > balance;
+}
+
+document.getElementById('btn-suivant').addEventListener('click',()=>{
+  if(currentAmount < 1 || currentAmount > balance) return;
+
+  // conf avatar
+  const confAv = document.getElementById('conf-av');
+  confAv.innerHTML = currentUser.avatarUrl
+    ? `<img src="${h(currentUser.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+    : emojiFor(currentUser.name);
+
+  document.getElementById('conf-name').textContent  = currentUser.name;
+  document.getElementById('conf-name2').textContent = currentUser.name;
+
+  // conf amount avec vrai logo
+  document.getElementById('conf-amount-row').innerHTML =
+    rbxIcon(16) + `<span>${currentAmount.toLocaleString('fr-FR')}</span>`;
+  document.getElementById('conf-after-row').innerHTML =
+    rbxIcon(16) + `<span>${(balance - currentAmount).toLocaleString('fr-FR')}</span>`;
+
+  show('step-confirm');
+});
+
+/* ══ ÉTAPE 3 : CONFIRM ══ */
+document.getElementById('btn-confirm').addEventListener('click',()=>{
+  balance -= currentAmount;
+  updateBalance();
+
+  const d = {name:currentUser.name, avatarUrl:currentUser.avatarUrl, amount:currentAmount};
+  donations.unshift(d);
+  addToFeed(d);
+
+  // success
+  document.getElementById('succ-amount-row').innerHTML =
+    rbxIcon(28) + `<span id="succ-amount">${currentAmount.toLocaleString('fr-FR')}</span>`;
+  document.getElementById('succ-name').textContent  = currentUser.name;
+  document.getElementById('succ-name2').textContent = currentUser.name;
+  show('step-success');
+});
+
+document.getElementById('btn-cancel').addEventListener('click',()=>show('step-search'));
+
+/* ══ ÉTAPE 4 : SUCCÈS ══ */
+document.getElementById('btn-new').addEventListener('click',()=>{
+  searchInput.value = '';
+  resetVerify();
+  show('step-search');
+});
+
+/* ══ FEED ══ */
+function addToFeed(d){
+  const list = document.getElementById('feed-list');
+  list.querySelector('div[style]')?.remove();
+  const el = document.createElement('div');
+  el.className = 'feed-item';
+  const now = new Date();
+  const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  el.innerHTML = `
+    <div class="feed-av">${d.avatarUrl ? `<img src="${h(d.avatarUrl)}" />` : emojiFor(d.name)}</div>
+    <div class="feed-info">
+      <div class="feed-user">${h(d.name)}</div>
+      <div class="feed-msg">⏱ Livraison sous 48h</div>
+    </div>
+    <div class="feed-right">
+      <div class="feed-amt">${rbxIcon(12)}<span>${d.amount.toLocaleString('fr-FR')}</span></div>
+      <div class="feed-time">${t}</div>
+    </div>`;
+  list.prepend(el);
+}
+
+/* ══ NAVIGATION ══ */
+function show(id){
+  ['step-search','step-amount','step-confirm','step-success'].forEach(s=>{
+    const el = document.getElementById(s);
+    el.style.display = (s === id)
+      ? (s === 'step-search' ? 'block' : 'flex')
+      : 'none';
+  });
+  window.scrollTo(0,0);
+}
+
+/* ══ UTILS ══ */
+function h(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+/* ══ INIT ══ */
+injectLogos();
+show('step-search');
+</script>
+</body>
+</html>
